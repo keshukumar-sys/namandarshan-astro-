@@ -76,7 +76,7 @@ const AstrologerCard = ({ astrologer, onCall, onChat }: any) => {
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="mt-5 grid grid-cols-1 gap-3">
         <button
           type="button"
           onClick={() => onChat(astrologer)}
@@ -86,6 +86,7 @@ const AstrologerCard = ({ astrologer, onCall, onChat }: any) => {
           Chat Now
         </button>
 
+        {/* 
         <button
           type="button"
           onClick={() => onCall(astrologer)}
@@ -94,6 +95,7 @@ const AstrologerCard = ({ astrologer, onCall, onChat }: any) => {
         >
           Call Now
         </button>
+        */}
       </div>
     </div>
   );

@@ -111,7 +111,7 @@ const AstroBookingModal = ({ isOpen, onClose }: AstroBookingModalProps) => {
         };
 
         try {
-            const res = await fetch(getApiUrl("/api/bookings"), {
+            const res = await fetch(getApiUrl("/api/astro-bookings"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(bookingData)

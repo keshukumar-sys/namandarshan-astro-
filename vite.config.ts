@@ -17,20 +17,20 @@ export default defineConfig(({ mode }) => ({
     },
     proxy: {
       "/api": {
-        target: "https://namandarshan-astrotalk-testing-backend.onrender.com",
+        target: "http://localhost:5001",
         changeOrigin: true,
       },
       "/socket.io": {
-        target: "https://namandarshan-astrotalk-testing-backend.onrender.com",
+        target: "http://localhost:5001",
         changeOrigin: true,
         ws: true,
       },
       "/sitemap.xml": {
-        target: "https://namandarshan-astrotalk-testing-backend.onrender.com",
+        target: "http://localhost:5001",
         changeOrigin: true,
       },
       "/sitemap-": {
-        target: "https://namandarshan-astrotalk-testing-backend.onrender.com",
+        target: "http://localhost:5001",
         changeOrigin: true,
       },
     },

@@ -326,7 +326,7 @@ const DevoteeDashboard = () => {
                           ))}
                         </div>
 
-                        <div className="mt-5 grid grid-cols-2 gap-3">
+                        <div className="mt-5 grid grid-cols-1 gap-3">
                           <Button
                             type="button"
                             disabled={!canChat || isStartingId === `${pandit.id}-chat`}
@@ -336,6 +336,7 @@ const DevoteeDashboard = () => {
                             <MessageCircle className="h-4 w-4" />
                             Chat
                           </Button>
+                          {/* 
                           <Button
                             type="button"
                             disabled={!canCall || isStartingId === `${pandit.id}-call`}
@@ -345,6 +346,7 @@ const DevoteeDashboard = () => {
                             <PhoneCall className="h-4 w-4" />
                             Call
                           </Button>
+                          */}
                         </div>
                       </div>
                     </article>

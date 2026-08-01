@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getApiUrl } from '@/utils/api';
+import { getApiUrl, getAuthApiUrl } from '@/utils/api';
 
 interface User {
     _id?: string;
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const fetchUserFromToken = async (token: string) => {
         try {
-            const res = await fetch(getApiUrl('/api/auth/me'), {
+            const res = await fetch(getAuthApiUrl('/api/auth/me'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const signupUser = async (email: string, password?: string, name?: string, role: string = 'user'): Promise<AuthResult> => {
         try {
-            const res = await fetch(getApiUrl('/api/auth/signup'), {
+            const res = await fetch(getAuthApiUrl('/api/auth/signup'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, name, phone: '', role })
@@ -126,7 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const loginUser = async (email: string, password?: string, role: string = 'user'): Promise<AuthResult> => {
         try {
-            const res = await fetch(getApiUrl('/api/auth/login'), {
+            const res = await fetch(getAuthApiUrl('/api/auth/login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, role })
@@ -141,7 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const sendOtp = async (email: string, role: string = 'user'): Promise<AuthResult> => {
         try {
-            const res = await fetch(getApiUrl('/api/auth/send-otp'), {
+            const res = await fetch(getAuthApiUrl('/api/auth/send-otp'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, role })
@@ -156,7 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const verifyOtp = async (email: string, otp: string, role: string = 'user'): Promise<AuthResult> => {
         try {
-            const res = await fetch(getApiUrl('/api/auth/verify-otp'), {
+            const res = await fetch(getAuthApiUrl('/api/auth/verify-otp'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, otp, role })
@@ -178,7 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         tokens: SocialLoginTokens = {}
     ): Promise<AuthResult> => {
         try {
-            const res = await fetch(getApiUrl('/api/auth/social-login'), {
+            const res = await fetch(getAuthApiUrl('/api/auth/social-login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ provider, email, name, socialId, role, ...tokens })
@@ -242,7 +242,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const token = localStorage.getItem('userToken');
             if (!token) return { success: false, message: "Not authorized" };
 
-            const res = await fetch(getApiUrl('/api/auth/profile'), {
+            const res = await fetch(getAuthApiUrl('/api/auth/profile'), {
                 method: 'PATCH',
                 headers: { 
                     'Content-Type': 'application/json',

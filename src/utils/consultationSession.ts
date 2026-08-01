@@ -159,7 +159,7 @@ export const startWalletConsultationSession = async ({
 
 export const finalizeWalletConsultationSession = async (bookingId: string) => {
   const token = readUserToken();
-  const response = await fetch(getApiUrl(`/api/bookings/${encodeURIComponent(bookingId)}/finalize`), {
+  const response = await fetch(getApiUrl(`/api/astro-bookings/${encodeURIComponent(bookingId)}/finalize`), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -176,7 +176,7 @@ export const finalizeWalletConsultationSession = async (bookingId: string) => {
 
 export const markPanditJoinedConsultationSession = async (bookingId: string) => {
   const token = readUserToken();
-  const response = await fetch(getApiUrl(`/api/bookings/${encodeURIComponent(bookingId)}/join`), {
+  const response = await fetch(getApiUrl(`/api/astro-bookings/${encodeURIComponent(bookingId)}/join`), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -201,7 +201,7 @@ export const submitConsultationFeedback = async ({
   comment?: string;
 }) => {
   const token = readUserToken();
-  const response = await fetch(getApiUrl(`/api/bookings/${encodeURIComponent(bookingId)}/feedback`), {
+  const response = await fetch(getApiUrl(`/api/astro-bookings/${encodeURIComponent(bookingId)}/feedback`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

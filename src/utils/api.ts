@@ -3,7 +3,6 @@ const isAbsoluteUrl = (value: string) => /^https?:\/\//i.test(value);
 
 export const getApiBaseUrl = () => {
     // Current environment check
-    const isProd = !import.meta.env.DEV;
     const envBaseUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL)?.trim();
 
     if (envBaseUrl) {
@@ -11,6 +10,14 @@ export const getApiBaseUrl = () => {
     }
     
     return ""; // Fallback to empty if not provided in env
+};
+
+export const getAuthApiUrl = (path: string) => {
+    const isProd = !import.meta.env.DEV;
+    const envBaseUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL)?.trim();
+    const base = envBaseUrl ? trimTrailingSlash(envBaseUrl) : (isProd ? "https://api.namandarshan.com" : "");
+    const endpoint = path.startsWith("/") ? path : `/${path}`;
+    return `${base}${endpoint}`;
 };
 
 /**

@@ -21,6 +21,8 @@ import { getApiUrl, readJsonResponse } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext";
 import { Button } from "@/components/ui/button";
+import { useWallet } from "@/context/WalletContext";
+import { RechargeModal } from "@/components/astrologer/RechargeModal";
 import { markPanditJoinedConsultationSession } from "@/utils/consultationSession";
 
 type RangeOption = "7d" | "30d" | "90d" | "all";
@@ -267,6 +269,8 @@ const PanditDashboard = () => {
   const [notifications, setNotifications] = useState<PanditBookingNotification[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [joiningBookingId, setJoiningBookingId] = useState<string | null>(null);
+  const { balance } = useWallet();
+  const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
   const navigate = useNavigate();
   const { user, isUserAuthenticated, isLoading: authLoading, logoutUser } = useAuth();
   const { socket, isConnected } = useSocket();

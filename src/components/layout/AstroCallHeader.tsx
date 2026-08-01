@@ -62,6 +62,7 @@ const AstroCallHeader = ({
                 Chat
               </button>
 
+              {/* 
               <button
                 onClick={onCallClick}
                 className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-full transition"
@@ -69,6 +70,7 @@ const AstroCallHeader = ({
                 <Phone size={18} />
                 Call
               </button>
+              */}
 
             </div>
 

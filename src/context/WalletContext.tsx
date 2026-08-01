@@ -212,7 +212,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         if (!token) return { success: false, message: 'Please login first.' };
 
         try {
-            const res = await fetch(getApiUrl('/api/payments/recharge'), {
+            const res = await fetch(getApiUrl('/api/astro-payments/recharge'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -240,7 +240,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
                 const handlePaymentSuccess = async (response: RazorpayPaymentResponse) => {
                     try {
-                        const verifyRes = await fetch(getApiUrl('/api/payments/verify'), {
+                        const verifyRes = await fetch(getApiUrl('/api/astro-payments/verify'), {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
