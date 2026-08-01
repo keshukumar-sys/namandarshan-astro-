@@ -19,7 +19,18 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
-        const socketServerOrigin = new URL(getApiBaseUrl()).origin;
+        let socketServerOrigin = "";
+        try {
+            const apiBase = getApiBaseUrl();
+            if (apiBase) {
+                socketServerOrigin = new URL(apiBase).origin;
+            } else {
+                socketServerOrigin = window.location.origin;
+            }
+        } catch (error) {
+            console.error("[SocketContext] Failed to parse API base URL, falling back to window origin:", error);
+            socketServerOrigin = window.location.origin;
+        }
 
         const socketInstance = io(socketServerOrigin, {
             reconnectionAttempts: 5,

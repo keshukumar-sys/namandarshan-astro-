@@ -17,11 +17,13 @@ export default defineConfig(({ mode }) => ({
     },
     proxy: {
       "/api": {
-        // live
-        // target: "http://52.66.103.126:5001",
-        // local
         target: "https://namandarshan-astrotalk-testing-backend.onrender.com",
         changeOrigin: true,
+      },
+      "/socket.io": {
+        target: "https://namandarshan-astrotalk-testing-backend.onrender.com",
+        changeOrigin: true,
+        ws: true,
       },
       "/sitemap.xml": {
         target: "https://namandarshan-astrotalk-testing-backend.onrender.com",
