@@ -22,9 +22,9 @@ const DEFAULT_DURATION_SECONDS = 300;
 export default function AstroCall() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isUserAuthenticated } = useAuth();
+  const { isUserAuthenticated, user } = useAuth();
   const { balance, isLoading: isWalletLoading } = useWallet();
-  const hasWalletBalance = canStartConsultation(balance);
+  const hasWalletBalance = canStartConsultation(balance, user);
   const [pandits, setPandits] = useState<PanditProfile[]>([]);
   const [selectedCall, setSelectedCall] = useState<{
     bookingId: string;

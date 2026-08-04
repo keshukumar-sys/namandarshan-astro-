@@ -190,6 +190,18 @@ const VedicConsultants = () => {
                         <p className="text-lg text-stone-600 leading-relaxed">
                             Find answers to your life's most pressing questions. Connect with our experienced astrologers for personalized readings, Kundali matching, and Vastu advice.
                         </p>
+                        
+                        {/* New User Offer Banner */}
+                        {/* New User Offer Banner */}
+                        <div className="mt-8 mx-auto inline-flex items-center gap-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 text-green-800 px-6 py-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow animate-fade-in">
+                            <div className="bg-green-100 p-2 rounded-full">
+                                <span className="text-2xl block animate-bounce">🎁</span>
+                            </div>
+                            <div className="text-left">
+                                <h3 className="font-bold text-lg leading-tight">First Chat is Free!</h3>
+                                <p className="text-sm font-medium text-green-700">New users get their first 5 minutes completely free.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -219,6 +231,11 @@ const VedicConsultants = () => {
                                     <div className="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-stone-900 font-bold text-sm shadow-sm flex items-center gap-1.5">
                                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                                         {pundit.timing}
+                                    </div>
+                                    
+                                    {/* Free Chat Badge */}
+                                    <div className="absolute top-4 left-4 z-20 bg-gradient-to-r from-green-600 to-emerald-500 text-white px-3 py-1.5 rounded-full font-bold text-xs shadow-lg flex items-center gap-1.5 border border-green-400/50 backdrop-blur-sm">
+                                        <span>⭐</span> 5 Mins Free
                                     </div>
                                 </div>
 

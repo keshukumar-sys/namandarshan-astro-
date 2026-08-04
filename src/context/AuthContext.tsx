@@ -10,6 +10,7 @@ interface User {
     authProvider?: string;
     avatar?: string;
     banner?: string;
+    hasUsedFreeChat?: boolean;
 }
 
 type AuthResult = { success: boolean, message?: string };

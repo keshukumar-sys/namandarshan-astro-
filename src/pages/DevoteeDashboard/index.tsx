@@ -43,7 +43,7 @@ const DevoteeDashboard = () => {
   const [showRecharge, setShowRecharge] = useState(false);
   const [isStartingId, setIsStartingId] = useState<string | null>(null);
 
-  const hasWalletBalance = canStartConsultation(balance);
+  const hasWalletBalance = canStartConsultation(balance, user);
   const firstName = user?.name?.split(" ")[0] || "Devotee";
 
   const loadPandits = useCallback(async () => {
@@ -94,11 +94,6 @@ const DevoteeDashboard = () => {
       return false;
     }
 
-    if (!hasWalletBalance) {
-      setShowRecharge(true);
-      return false;
-    }
-
     return true;
   };
 
@@ -143,7 +138,11 @@ const DevoteeDashboard = () => {
         },
       });
     } catch (startError: any) {
-      toast.error(startError?.message || "Unable to start consultation.");
+      if (startError?.message?.includes("Add money")) {
+        setShowRecharge(true);
+      } else {
+        toast.error(startError?.message || "Unable to start consultation.");
+      }
     } finally {
       setIsStartingId(null);
     }
@@ -175,6 +174,17 @@ const DevoteeDashboard = () => {
                 <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
                   Connect with verified pandits for private chat or live call consultations.
                 </p>
+                
+                {/* New User Offer Banner */}
+                <div className="mt-5 inline-flex items-center gap-3 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 text-emerald-800 px-5 py-3 rounded-xl shadow-sm">
+                  <div className="bg-emerald-100 p-2 rounded-full">
+                      <span className="text-xl block animate-bounce">🎁</span>
+                  </div>
+                  <div className="text-left">
+                      <h3 className="font-bold text-base leading-tight">First Chat is Free!</h3>
+                      <p className="text-xs font-medium text-emerald-700">New users get their first 5 minutes completely free.</p>
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-3">
@@ -286,9 +296,13 @@ const DevoteeDashboard = () => {
                     <article key={pandit.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
                       <div className="relative h-36 bg-slate-100">
                         <img src={image} alt={pandit.name} className="h-full w-full object-cover" />
-                        <span className="absolute left-3 top-3 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
+                        <span className="absolute left-3 top-3 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-sm">
                           {pandit.status || "online"}
                         </span>
+                        {/* Free Chat Badge */}
+                        <div className="absolute top-3 right-3 z-20 bg-gradient-to-r from-green-600 to-emerald-500 text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg flex items-center gap-1.5 border border-green-400/50 backdrop-blur-sm">
+                            <span>⭐</span> 5 Mins Free
+                        </div>
                       </div>
                       <div className="p-4">
                         <div className="flex items-start justify-between gap-3">

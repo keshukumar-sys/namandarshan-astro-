@@ -61,7 +61,7 @@ const AstroChat = () => {
   const { socket, isConnected } = useSocket();
   const { user } = useAuth();
   const { balance, isLoading: isWalletLoading, refreshBalance } = useWallet();
-  const hasWalletBalance = canStartConsultation(balance);
+  const hasWalletBalance = canStartConsultation(balance, user);
   const isPandit = ["pandit", "astrologer"].includes(user?.role || "");
 
   const astrologer = useMemo(() => {
@@ -135,7 +135,7 @@ const AstroChat = () => {
 
     const loadBookingDevotee = async () => {
       try {
-        const payload: BookingSessionResponse = await markPanditJoinedConsultationSession(activeBookingId);
+        const payload = await markPanditJoinedConsultationSession(activeBookingId) as any;
         const customerName = payload.booking?.customerName?.trim();
         const remainingSeconds = Number(payload.session?.remainingSeconds);
 
@@ -294,7 +294,11 @@ const AstroChat = () => {
     if (!socket) return;
 
     const handleIncoming = (msg: ChatMessage) => {
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id && m.id !== undefined)) return prev;
+        if (prev.some(m => m.text === msg.text && m.sender === msg.sender && m.time === msg.time)) return prev;
+        return [...prev, msg];
+      });
     };
 
     const handleAutoEnded = (payload: ConsultationAutoEndedPayload) => {
@@ -353,7 +357,7 @@ const AstroChat = () => {
     };
 
     setMessages((prev) => [...prev, outgoing]);
-    socket?.emit("chat:message", { roomId, text: outgoing.text, sender: senderRole });
+    socket?.emit("chat:message", { roomId, text: outgoing.text, sender: senderRole, id: outgoing.id, time: outgoing.time });
     setMessage("");
   };
 

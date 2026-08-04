@@ -117,10 +117,10 @@ const Header = () => {
             {/* Auth Links */}
             <div className="hidden md:flex items-center gap-2">
               <Link
-                to="/volunteer"
+                to="/referral"
                 className="bg-green-600 hover:bg-green-700 text-white font-extrabold py-2 px-6 rounded-full mr-4 transition-all shadow-md hover:shadow-lg animate-pulse"
               >
-                {/* Join Naman Parivaar */} Volunteer with Purpose
+                {/* Join Naman Parivaar */} Spread Sanatan Dharma
               </Link>
 
               {isLoading ? (

@@ -49,7 +49,7 @@ const WebRTCCall = ({
   const { balance, refreshBalance } = useWallet();
 
   const isPandit = ["pandit", "astrologer"].includes(user?.role || "");
-  const hasWalletBalance = canStartConsultation(balance);
+  const hasWalletBalance = canStartConsultation(balance, user);
   const bookingId = bookingIdProp || location.state?.bookingId || "";
   const roomId = roomIdProp || location.state?.roomId || bookingId || "astro-room";
   const initialSessionSeconds = Number(sessionSecondsProp || location.state?.durationSeconds || 300);
