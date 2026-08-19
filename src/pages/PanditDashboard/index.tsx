@@ -14,6 +14,15 @@ import {
   Save,
   UserRound,
   Users,
+  Camera,
+  Crop,
+  RotateCw,
+  ZoomIn,
+  ZoomOut,
+  Upload,
+  X,
+  Loader2,
+  Star,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -22,7 +31,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/context/WalletContext";
-import { RechargeModal } from "@/components/astrologer/RechargeModal";
+import RechargeModal from "@/components/astrologer/RechargeModal";
 import { markPanditJoinedConsultationSession } from "@/utils/consultationSession";
 
 type RangeOption = "7d" | "30d" | "90d" | "all";
@@ -98,6 +107,7 @@ interface PanditProfile {
   pricePerMinute?: number;
   experienceYears?: number;
   status?: "online" | "busy" | "offline";
+  availabilityStatus?: "online" | "busy" | "offline";
   avatar?: string;
   image?: string;
   rating?: number;
@@ -164,6 +174,7 @@ const emptyProfileForm = {
   pricePerMinute: "13",
   experienceYears: "0",
   status: "online" as "online" | "busy" | "offline",
+  availabilityStatus: "online" as "online" | "busy" | "offline",
   avatar: "",
   isActive: true,
 };
@@ -263,6 +274,109 @@ const PanditDashboard = () => {
   const [profile, setProfile] = useState<PanditProfile | null>(null);
   const [profileForm, setProfileForm] = useState(emptyProfileForm);
   const [isLoading, setIsLoading] = useState(true);
+  const [showRecharge, setShowRecharge] = useState(false);
+
+  // Profile Image Crop State
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
+  const [cropZoom, setCropZoom] = useState(1);
+  const [cropRotation, setCropRotation] = useState(0);
+  const [cropOffsetX, setCropOffsetX] = useState(0);
+  const [cropOffsetY, setCropOffsetY] = useState(0);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setRawImageSrc(reader.result as string);
+      setCropZoom(1);
+      setCropRotation(0);
+      setCropOffsetX(0);
+      setCropOffsetY(0);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleApplyCropAndUpload = async () => {
+    if (!rawImageSrc) return;
+    setIsUploadingAvatar(true);
+
+    try {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = rawImageSrc;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      const canvas = document.createElement("canvas");
+      const size = 400;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) throw new Error("Could not initialize canvas context");
+
+      ctx.save();
+      ctx.translate(size / 2, size / 2);
+      ctx.rotate((cropRotation * Math.PI) / 180);
+      ctx.scale(cropZoom, cropZoom);
+
+      const aspect = img.width / img.height;
+      let drawW = size;
+      let drawH = size;
+      if (aspect > 1) {
+        drawH = size;
+        drawW = size * aspect;
+      } else {
+        drawW = size;
+        drawH = size / aspect;
+      }
+
+      ctx.drawImage(
+        img,
+        -drawW / 2 + cropOffsetX,
+        -drawH / 2 + cropOffsetY,
+        drawW,
+        drawH
+      );
+      ctx.restore();
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", 0.9)
+      );
+
+      if (!blob) throw new Error("Failed to process image data");
+
+      const body = new FormData();
+      body.append("file", blob, `avatar_${Date.now()}.jpg`);
+
+      const res = await fetch(getApiUrl("/api/upload"), {
+        method: "POST",
+        body,
+      });
+
+      const data = await readJsonResponse<any>(res);
+      if (!res.ok) throw new Error(data?.message || "Upload failed");
+
+      const uploadedUrl = data?.url || data?.fileUrl || data?.location;
+      if (!uploadedUrl) throw new Error("Image URL missing from server response");
+
+      setProfileForm((prev) => ({ ...prev, avatar: uploadedUrl }));
+      toast.success("Profile picture updated successfully!");
+      setCropModalOpen(false);
+      setRawImageSrc(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to crop and upload image");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -339,12 +453,37 @@ const PanditDashboard = () => {
         pricePerMinute: String(nextProfile.pricePerMinute || 13),
         experienceYears: String(nextProfile.experienceYears || 0),
         status: nextProfile.status || "online",
+        availabilityStatus: nextProfile.availabilityStatus || nextProfile.status || "online",
         avatar: nextProfile.avatar || nextProfile.image || "",
         isActive: nextProfile.isActive !== false,
       });
       setProfileError(null);
     } catch (loadError: unknown) {
       setProfileError(getErrorMessage(loadError, "Unable to load profile."));
+    }
+  }, []);
+
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
+  const [feedbackSummary, setFeedbackSummary] = useState<any>(null);
+  const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
+
+  const loadFeedbacks = useCallback(async () => {
+    const token = localStorage.getItem("userToken");
+    if (!token) return;
+    setIsLoadingFeedback(true);
+    try {
+      const res = await fetch(getApiUrl("/api/pandit-dashboard/feedback"), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const payload = await res.json();
+      if (payload.success) {
+        setFeedbacks(payload.feedbacks || []);
+        setFeedbackSummary(payload.summary || null);
+      }
+    } catch (e) {
+      console.error("Failed to load feedbacks", e);
+    } finally {
+      setIsLoadingFeedback(false);
     }
   }, []);
 
@@ -361,13 +500,43 @@ const PanditDashboard = () => {
 
     loadDashboard();
     loadProfile();
-  }, [authLoading, isUserAuthenticated, loadDashboard, loadProfile, navigate, user]);
+    loadFeedbacks();
+  }, [authLoading, isUserAuthenticated, loadDashboard, loadFeedbacks, loadProfile, navigate, user]);
 
   const totals = data?.totals || emptyTotals;
   const byMode = data?.byMode || { call: emptyMode, chat: emptyMode };
   const visibleDaily = useMemo(() => (data?.daily || []).slice(-14), [data?.daily]);
   const dashboardLabel = data?.scope.panditName || profile?.displayName || user?.name || "Pandit";
   const currentPanditId = String(profile?.id || user?._id || data?.scope.panditId || "").trim();
+
+  useEffect(() => {
+    if (socket && currentPanditId) {
+      socket.emit("pandit:register_online", { panditId: currentPanditId, email: user?.email });
+    }
+  }, [socket, currentPanditId, user?.email]);
+
+  const updateAvailabilityStatus = async (nextStatus: "online" | "busy" | "offline") => {
+    const token = localStorage.getItem("userToken");
+    if (!token) return;
+    try {
+      const res = await fetch(getApiUrl("/api/pandit-dashboard/status"), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: nextStatus })
+      });
+      const payload = await res.json();
+      if (payload.success) {
+        toast.success(`Availability status set to ${nextStatus.toUpperCase()}`);
+        setProfileForm((prev) => ({ ...prev, availabilityStatus: nextStatus }));
+        setProfile((prev: any) => ({ ...prev, status: nextStatus, availabilityStatus: nextStatus }));
+      }
+    } catch (e) {
+      toast.error("Failed to update status.");
+    }
+  };
   const unreadNotificationCount = notifications.filter((item) => item.unread).length;
   const maxDailyBookings = Math.max(1, ...visibleDaily.map((item) => item.bookings));
   const completionRate =
@@ -495,6 +664,9 @@ const PanditDashboard = () => {
     setIsSavingProfile(true);
     setProfileError(null);
 
+    const displayName = profileForm.displayName.trim() || user?.name || "Pandit Ji";
+    const expertise = profileForm.expertise.trim() || "Vedic Astrology, Puja, Spiritual Guidance";
+
     try {
       const response = await fetch(getApiUrl("/api/pandit-dashboard/profile"), {
         method: "PUT",
@@ -504,8 +676,11 @@ const PanditDashboard = () => {
         },
         body: JSON.stringify({
           ...profileForm,
-          pricePerMinute: Number(profileForm.pricePerMinute),
-          experienceYears: Number(profileForm.experienceYears),
+          displayName,
+          expertise,
+          modes: ["chat"],
+          pricePerMinute: Number(profileForm.pricePerMinute) || 13,
+          experienceYears: Number(profileForm.experienceYears) || 0,
         }),
       });
       const payload = await readJsonResponse<ProfileResponse>(response);
@@ -515,7 +690,12 @@ const PanditDashboard = () => {
       }
 
       setProfile(payload.profile);
-      toast.success("Pandit profile saved.");
+      setProfileForm((prev) => ({
+        ...prev,
+        displayName: payload.profile.displayName || displayName,
+        expertise: payload.profile.expertise || expertise,
+      }));
+      toast.success("Pandit profile saved successfully!");
       await loadDashboard();
     } catch (saveError: unknown) {
       setProfileError(getErrorMessage(saveError, "Unable to save profile."));
@@ -753,11 +933,54 @@ const PanditDashboard = () => {
                 This profile appears in the devotee dashboard for chat and call bookings.
               </p>
             </div>
-            <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
-              profileForm.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
-            }`}>
-              {profileForm.isActive ? "Visible to devotees" : "Hidden from devotees"}
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => updateAvailabilityStatus("online")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                    (profileForm.availabilityStatus || profile?.availabilityStatus || profile?.status || "online") === "online"
+                      ? "bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+                  Online
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => updateAvailabilityStatus("busy")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                    (profileForm.availabilityStatus || profile?.availabilityStatus || profile?.status) === "busy"
+                      ? "bg-red-600 text-white shadow-sm ring-2 ring-red-300"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                  Busy
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => updateAvailabilityStatus("offline")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                    (profileForm.availabilityStatus || profile?.availabilityStatus || profile?.status) === "offline"
+                      ? "bg-slate-700 text-white shadow-sm ring-2 ring-slate-400"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-slate-300" />
+                  Offline
+                </button>
+              </div>
+
+              <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
+                profileForm.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
+              }`}>
+                {profileForm.isActive ? "Visible to devotees" : "Hidden from devotees"}
+              </span>
+            </div>
           </div>
 
           {profileError && (
@@ -776,8 +999,8 @@ const PanditDashboard = () => {
                 id="displayName"
                 value={profileForm.displayName}
                 onChange={(event) => updateProfileField("displayName", event.target.value)}
+                placeholder="e.g. Pandit Ji"
                 className="mt-2 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-                required
               />
             </div>
 
@@ -791,7 +1014,6 @@ const PanditDashboard = () => {
                 onChange={(event) => updateProfileField("expertise", event.target.value)}
                 placeholder="Vedic Astrology, Puja, Numerology"
                 className="mt-2 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-                required
               />
             </div>
 
@@ -823,21 +1045,7 @@ const PanditDashboard = () => {
               />
             </div>
 
-            <div>
-              <label className="text-sm font-semibold text-slate-700" htmlFor="status">
-                Status
-              </label>
-              <select
-                id="status"
-                value={profileForm.status}
-                onChange={(event) => updateProfileField("status", event.target.value)}
-                className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-              >
-                <option value="online">Online</option>
-                <option value="busy">Busy</option>
-                <option value="offline">Offline</option>
-              </select>
-            </div>
+
 
             <div className="lg:col-span-2">
               <label className="text-sm font-semibold text-slate-700" htmlFor="languages">
@@ -852,16 +1060,67 @@ const PanditDashboard = () => {
               />
             </div>
 
-            <div className="lg:col-span-2">
-              <label className="text-sm font-semibold text-slate-700" htmlFor="avatar">
-                Profile Image URL
-              </label>
-              <input
-                id="avatar"
-                value={profileForm.avatar}
-                onChange={(event) => updateProfileField("avatar", event.target.value)}
-                className="mt-2 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-              />
+            {/* Profile Photo Upload & Crop Section */}
+            <div className="lg:col-span-4 rounded-xl border border-slate-200 bg-slate-50/70 p-5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                {/* Avatar Preview Frame */}
+                <div className="relative group shrink-0">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md bg-slate-200 flex items-center justify-center">
+                    {profileForm.avatar ? (
+                      <img
+                        src={profileForm.avatar}
+                        alt="Profile Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=Pandit";
+                        }}
+                      />
+                    ) : (
+                      <UserRound className="w-12 h-12 text-slate-400" />
+                    )}
+                  </div>
+                  <label className="absolute bottom-0 right-0 p-2 bg-orange-600 hover:bg-orange-700 text-white rounded-full shadow-lg cursor-pointer transition-transform hover:scale-105" title="Change & Crop Photo">
+                    <Camera className="w-4 h-4" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                <div className="flex-1 space-y-3 w-full">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800">Profile Photo</h4>
+                      <p className="text-xs text-slate-500">Upload and crop your photo. This photo will be visible to devotees.</p>
+                    </div>
+                    <label className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold rounded-lg shadow-sm cursor-pointer transition-colors">
+                      <Upload className="w-3.5 h-3.5" /> Upload & Crop Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider" htmlFor="avatar">
+                      Profile Image URL (Optional Direct Link)
+                    </label>
+                    <input
+                      id="avatar"
+                      value={profileForm.avatar}
+                      onChange={(event) => updateProfileField("avatar", event.target.value)}
+                      placeholder="https://..."
+                      className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="lg:col-span-4">
@@ -1049,6 +1308,65 @@ const PanditDashboard = () => {
           </section>
         </div>
 
+        {/* Devotee Feedback & Ratings Section (Compact) */}
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+              <h2 className="text-base font-bold text-slate-900">Devotee Feedback & Ratings</h2>
+            </div>
+            
+            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-800">
+              <span>⭐ {feedbackSummary?.avgRating || profile?.rating || "5.0"} / 5</span>
+              <span className="text-amber-600/70 font-normal">({feedbackSummary?.totalReviews || feedbacks.length || 0} reviews)</span>
+            </div>
+          </div>
+
+          {isLoadingFeedback ? (
+            <div className="py-6 text-center text-slate-400">
+              <Loader2 className="w-5 h-5 animate-spin mx-auto text-orange-500 mb-1" />
+              <p className="text-xs font-medium">Loading feedback...</p>
+            </div>
+          ) : feedbacks.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {feedbacks.map((fb) => (
+                <div key={fb.id || fb.bookingId} className="bg-slate-50/80 border border-slate-200/70 rounded-lg p-3 flex flex-col justify-between hover:border-amber-300 transition-all">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-900 text-xs truncate max-w-[150px]">{fb.customerName}</span>
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-3 h-3 ${
+                              star <= fb.rating
+                                ? "text-amber-500 fill-amber-500"
+                                : "text-slate-300"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-600 italic line-clamp-2 bg-white px-2 py-1.5 rounded border border-slate-100">
+                      "{fb.comment || "No comment provided."}"
+                    </p>
+                  </div>
+
+                  <div className="mt-2 pt-1.5 border-t border-slate-200/50 flex items-center justify-between text-[10px] text-slate-400">
+                    <span>ID: {fb.bookingId}</span>
+                    <span>{fb.ratedAt ? new Date(fb.ratedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : ""}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-6 text-center bg-slate-50/60 rounded-lg border border-dashed border-slate-200">
+              <p className="text-xs font-medium text-slate-500">No Devotee Feedback Yet</p>
+            </div>
+          )}
+        </section>
+
         <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col gap-2 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -1136,6 +1454,145 @@ const PanditDashboard = () => {
           </div>
         </section>
       </main>
+      {/* Interactive Profile Image Crop Modal */}
+      {cropModalOpen && rawImageSrc && (
+        <div className="fixed inset-0 z-[300] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+              <h3 className="font-bold text-sm sm:text-base flex items-center gap-2">
+                <Crop className="w-5 h-5 text-orange-400" /> Crop & Adjust Profile Photo
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setCropModalOpen(false);
+                  setRawImageSrc(null);
+                }}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 overflow-y-auto flex-1 bg-slate-50">
+              {/* Interactive Preview Frame */}
+              <div className="relative w-60 h-60 mx-auto rounded-full overflow-hidden border-4 border-orange-500 shadow-xl bg-slate-900 flex items-center justify-center">
+                <div
+                  className="w-full h-full flex items-center justify-center overflow-hidden"
+                  style={{
+                    transform: `scale(${cropZoom}) rotate(${cropRotation}deg) translate(${cropOffsetX}px, ${cropOffsetY}px)`,
+                    transition: "transform 0.1s ease-out",
+                  }}
+                >
+                  <img
+                    src={rawImageSrc}
+                    alt="Crop preview"
+                    className="max-w-none w-full h-full object-cover"
+                  />
+                </div>
+                {/* Circular Mask Guide */}
+                <div className="absolute inset-0 border-2 border-dashed border-white/70 rounded-full pointer-events-none" />
+              </div>
+
+              {/* Crop Controls */}
+              <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                {/* Zoom Control */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-semibold text-slate-700">
+                    <span className="flex items-center gap-1"><ZoomIn className="w-3.5 h-3.5 text-orange-600" /> Zoom Level</span>
+                    <span>{cropZoom.toFixed(1)}x</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="3.0"
+                    step="0.1"
+                    value={cropZoom}
+                    onChange={(e) => setCropZoom(parseFloat(e.target.value))}
+                    className="w-full accent-orange-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+                  />
+                </div>
+
+                {/* Horizontal Shift */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-semibold text-slate-700">
+                    <span>Move Horizontal (X)</span>
+                    <span>{cropOffsetX}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-100"
+                    max="100"
+                    step="5"
+                    value={cropOffsetX}
+                    onChange={(e) => setCropOffsetX(parseInt(e.target.value))}
+                    className="w-full accent-orange-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+                  />
+                </div>
+
+                {/* Vertical Shift */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-semibold text-slate-700">
+                    <span>Move Vertical (Y)</span>
+                    <span>{cropOffsetY}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-100"
+                    max="100"
+                    step="5"
+                    value={cropOffsetY}
+                    onChange={(e) => setCropOffsetY(parseInt(e.target.value))}
+                    className="w-full accent-orange-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+                  />
+                </div>
+
+                {/* Rotate Button */}
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setCropRotation((prev) => (prev + 90) % 360)}
+                    className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center gap-1.5 transition-colors"
+                  >
+                    <RotateCw className="w-3.5 h-3.5 text-orange-600" /> Rotate 90°
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="px-5 py-4 bg-white border-t border-slate-100 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                disabled={isUploadingAvatar}
+                onClick={() => {
+                  setCropModalOpen(false);
+                  setRawImageSrc(null);
+                }}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isUploadingAvatar}
+                onClick={handleApplyCropAndUpload}
+                className="px-5 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-md flex items-center gap-2 transition-all disabled:opacity-50"
+              >
+                {isUploadingAvatar ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Uploading Cropped Photo...
+                  </>
+                ) : (
+                  <>
+                    <Crop className="w-4 h-4" /> Save & Set Profile Photo
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

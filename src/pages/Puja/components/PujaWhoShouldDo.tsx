@@ -9,7 +9,7 @@ export default function PujaWhoShouldDo({ puja }: { puja: any }) {
             <div className="bg-white p-6 md:p-8 rounded-2xl border border-stone-200 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                     <Users className="w-6 h-6 text-stone-700" />
-                    <h3 className="font-display text-2xl font-bold text-stone-900">Who Should Do This Puja?</h3>
+                    <h3 className="font-display text-2xl font-bold text-stone-900">{puja.title} – Who Should Do This Puja?</h3>
                 </div>
                 
                 <ul className="space-y-4">
@@ -39,7 +39,7 @@ export default function PujaWhoShouldDo({ puja }: { puja: any }) {
         <div className="bg-white p-6 md:p-8 rounded-2xl border border-stone-200 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
                 <Users className="w-6 h-6 text-stone-700" />
-                <h3 className="font-display text-2xl font-bold text-stone-900">Who Should Do This Puja?</h3>
+                <h3 className="font-display text-2xl font-bold text-stone-900">{puja.title} – Who Should Do This Puja?</h3>
             </div>
             
             <div 

@@ -134,7 +134,12 @@ const PrasadamCard = ({ id, slug, title, image, description, templeName, locatio
 
     const displayPrasadamName = cleanPrasadamName(title, templeName);
     const displayTempleName = cleanTempleName(templeName);
-    const fullHeading = `${displayTempleName} Prasadam Online – ${displayPrasadamName}`;
+    let fullHeading = `${displayTempleName} Prasadam Online – ${displayPrasadamName}`;
+    if (displayPrasadamName.toLowerCase().includes("prasadam online") || displayPrasadamName.toLowerCase() === displayTempleName.toLowerCase()) {
+        fullHeading = displayPrasadamName.toLowerCase() === displayTempleName.toLowerCase() 
+            ? `${displayTempleName} Prasadam Online` 
+            : displayPrasadamName;
+    }
 
     // Helper to extract a matching temple slug from the display name
     const getTempleSlug = (name: string) => {

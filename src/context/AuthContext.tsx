@@ -13,7 +13,7 @@ interface User {
     hasUsedFreeChat?: boolean;
 }
 
-type AuthResult = { success: boolean, message?: string };
+type AuthResult = { success: boolean, message?: string, role?: string };
 type SocialLoginTokens = { accessToken?: string; access_token?: string; idToken?: string };
 type GoogleProfile = { email: string; name: string; socialId: string };
 
@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Fetch full profile immediately to ensure all fields like avatar/banner are present 
             // and synced from the server's source of truth.
             await fetchUserFromToken(data.token);
-            return { success: true, message: data.message || "Success" };
+            return { success: true, message: data.message || "Success", role: data.user?.role };
         }
         return { success: false, message: data.message || "Authentication failed" };
     };

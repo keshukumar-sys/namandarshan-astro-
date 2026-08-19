@@ -8,7 +8,7 @@ export default function PujaGlory({ puja }: { puja: any }) {
             <div className="flex items-center gap-3 mb-6 border-b border-stone-100 pb-4">
                 <ScrollText className="w-6 h-6 text-stone-700" />
                 <h3 className="font-display text-2xl font-bold text-stone-900">
-                    {puja.gloryTitle || "Glory & Significance"}
+                {puja.title} – Spiritual Significance
                 </h3>
             </div>
             

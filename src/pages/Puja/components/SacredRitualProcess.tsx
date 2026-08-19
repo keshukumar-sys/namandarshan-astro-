@@ -13,7 +13,7 @@ const SacredRitualProcess: React.FC<SacredRitualProcessProps> = ({ puja }) => {
     return (
         <div className="bg-white p-6 md:p-8 rounded-2xl border border-stone-200 shadow-sm">
             <h2 className="font-display text-2xl font-bold text-stone-900 mb-6">
-                How the Process Works
+                {puja.title} – How the Process Works
             </h2>
             
             {/* Delivery Badges */}

@@ -11,7 +11,7 @@ export default function PujaBenefits({ puja }: { puja: any }) {
                         <Sparkles className="w-6 h-6 text-orange-500" />
                     </div>
                     <div>
-                        <h3 className="font-display text-2xl font-bold text-stone-900 mb-3">Benefits of This Puja</h3>
+                        <h3 className="font-display text-2xl font-bold text-stone-900 mb-3">{puja.title} – Benefits of This Puja</h3>
                         <div 
                             className="text-stone-700 leading-relaxed text-lg prose prose-stone prose-orange max-w-none"
                             dangerouslySetInnerHTML={{ 

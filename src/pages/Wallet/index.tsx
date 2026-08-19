@@ -88,13 +88,18 @@ const Wallet = () => {
           <div className="bg-white rounded-xl shadow border p-8">
             <h1 className="text-3xl font-bold mb-6">My Wallet</h1>
 
-            <div className="bg-green-50 border rounded-xl p-6 mb-6">
-              <p className="text-gray-500">Available Balance</p>
+            <div className="bg-emerald-50/80 border border-emerald-200/60 rounded-2xl p-6 mb-6 shadow-xs">
+              <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">Available Balance</p>
 
               {isLoading ? (
-                <Loader2 className="w-8 h-8 animate-spin text-green-600 mt-2" />
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mt-3" />
               ) : (
-                <h2 className="text-4xl font-bold text-green-600">₹{balance}</h2>
+                <div className="mt-2 flex items-center gap-2 text-emerald-600">
+                  <span className="text-3xl font-extrabold font-sans">₹</span>
+                  <span className="text-4xl font-black font-sans tracking-tight">
+                    {Number(balance || 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
               )}
             </div>
 

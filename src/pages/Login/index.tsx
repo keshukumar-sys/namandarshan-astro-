@@ -75,7 +75,7 @@ const Login = () => {
 
         if (loginMethod === "password") {
             const res = await loginUser(trimmedEmail, password, accountRole);
-            if (res.success) handleSuccessfulAuth(accountRole);
+            if (res.success) handleSuccessfulAuth(res.role || accountRole);
             else toast.error(res.message || "Invalid credentials.");
         } else {
             if (!otpSent) {

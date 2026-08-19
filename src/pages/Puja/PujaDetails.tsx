@@ -456,7 +456,7 @@ const PujaDetails = () => {
 
                             {puja.faqs && puja.faqs.length > 0 && (
                                 <div id="faqs" className="scroll-mt-80 bg-white p-6 md:p-8 rounded-2xl border border-stone-200 shadow-sm">
-                                    <h3 className="font-display text-2xl font-bold text-stone-900 mb-6">Common Questions</h3>
+                                    <h3 className="font-display text-2xl font-bold text-stone-900 mb-6">{puja.title} – Common Questions</h3>
                                     <Accordion type="single" collapsible className="w-full space-y-4">
                                         {puja.faqs.map((faq: any, idx: number) => (
                                             <AccordionItem key={idx} value={`item-${idx}`} className="bg-stone-50 border border-stone-100 px-6 rounded-xl">

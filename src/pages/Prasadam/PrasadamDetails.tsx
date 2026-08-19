@@ -33,11 +33,7 @@ import { Helmet } from "react-helmet-async";
 import { useAuth } from "@/context/AuthContext";
 import { useFormAbandonmentTracker } from "@/hooks/useFormAbandonmentTracker";
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+
 
 const PrasadamDetails = () => {
   const { slug } = useParams();
@@ -450,7 +446,6 @@ const PrasadamDetails = () => {
               <div className="bg-white rounded-3xl p-8 shadow-sm border border-stone-100">
                 <div>
                   <h1 className="font-display text-3xl md:text-4xl font-bold text-stone-900 mb-2">
-                    {displayTempleName} Prasadam Online &ndash;{" "}
                     {displayPrasadamName}
                   </h1>
                 </div>
@@ -525,7 +520,7 @@ const PrasadamDetails = () => {
               <div className="bg-white rounded-3xl shadow-xl border border-stone-100 overflow-hidden">
                 <div className="bg-orange-50 p-6 border-b border-orange-100">
                   <h2 className="font-display text-2xl font-bold text-stone-900 mb-1">
-                    Order {prasadam.title} Online 🛍️
+                    Order {prasadam.title} 🛍️
                   </h2>
                   <p className="text-stone-600">
                     Get divine blessings delivered home.
